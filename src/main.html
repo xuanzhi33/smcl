@@ -31,8 +31,7 @@
     <div class="card glass"> <br>
       <div class="container">
         <h1 class="text-center">SMCL</h1>
-        <span id="url"></span>
-        <button class="btn btn-success btn-block" id="btn">Test</button>
+        <p>开发中</p>
       </div>
       <br>
     </div>
@@ -41,10 +40,12 @@
   <br>
   <script src="https://unpkg.zhimg.com/jquery@3/dist/jquery.min.js"></script>
   <script>
-    $("#url").text(window.location.href);
-    $("#btn").click(()=>{
-      pywebview.api.change_title("SMCL");
-    })
+    const log = msg => {
+      const timeStr = new Date().toLocaleTimeString();
+      pywebview.api.log(`[SMCL] [${timeStr}] ${msg}`);
+    }
+
+    log("页面加载完成");
   </script>
 </body>
 
