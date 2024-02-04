@@ -23,9 +23,10 @@ jobs:
         run: pip install -r requirements.txt
       - name: Build
         run: |
-            pyinstaller --onefile main.py --add-data src/cmcl.exe:src \
+            pyinstaller --onefile --add-data src/cmcl.exe:src \
             --add-data src/cmcl.json:src \
             --add-data src/main.html:src \
+            main.py
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
