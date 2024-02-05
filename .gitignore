@@ -1,1 +1,6 @@
 src/.cmcl
+build
+dist
+*.spec
+test
+smcl.json
