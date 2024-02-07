@@ -10,43 +10,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SMCL</title>
   <!-- Bootstrap -->
-  <link href="https://unpkg.zhimg.com/bootstrap@4.4.1/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://www.xuanzhi33.cn/css/x-az.css" rel="stylesheet">
-  <link rel="icon" href="https://www.xuanzhi33.cn/favicon.ico">
-  <script>
-    var _hmt = _hmt || [];
-    (function () {
-      var hm = document.createElement("script");
-      hm.src = "https://hm.baidu.com/hm.js?2a6aca6b85659d07cf5d9e5417c4a5f5";
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(hm, s);
-    })();
-  </script>
+  <link href="./css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 
 <body>
-<br class="brBefore">
-<br class="brBefore">
   <div class="container">
     <div class="card glass"> <br>
       <div class="container">
         <h1 class="text-center">SMCL</h1>
         <p>开发中</p>
+        <input type="file">
       </div>
       <br>
     </div>
   </div>
   <br>
   <br>
-  <script src="https://unpkg.zhimg.com/jquery@3/dist/jquery.min.js"></script>
-  <script>
-    const log = msg => {
-      const timeStr = new Date().toLocaleTimeString();
-      pywebview.api.log(`[SMCL] [${timeStr}] ${msg}`);
-    }
-
-    log("页面加载完成");
-  </script>
+  <script src="./js/jquery.min.js"></script>
+  <script src="./js/api.js"></script>
+  <script src="./js/smcl.js"></script>
 </body>
 
 </html>
