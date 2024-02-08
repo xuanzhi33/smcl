@@ -1,4 +1,9 @@
 import subprocess
+from os import remove, path
+CMCL_JSON = "src/cmcl.json"
+if path.exists(CMCL_JSON):
+    print("检测到cmcl.json文件，正在删除")
+    remove(CMCL_JSON)
 
 cmds = ["pyinstaller"]
 

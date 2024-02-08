@@ -5,14 +5,15 @@ from os import path
 import json
 from webview import Window
 import requests
-
-CMCL = "./src/cmcl.exe"
+from datetime import datetime
 PATH = path.dirname(path.abspath(__file__))
 
 SRC_DIR = path.join(PATH, "src")
 GUI_MAIN = path.join(SRC_DIR, "main.html")
 SETTINGS = path.join(PATH, "smcl.json")
-SIZE = (800, 600)
+CMCL = path.join(SRC_DIR, "cmcl.exe")
+
+SIZE = (800, 450)
 DEBUG = True
 
 class Settings:
@@ -52,12 +53,15 @@ class Api:
         result = sp_run(args, capture_output=True, text=True)
         return result.stdout
     def set_title(self, title):
+        self.log(f"标题已经设置为: {title}")
         self.window.title = title
     def log(self, message):
-        print(message)
+        time_str = datetime.now().strftime("%H:%M:%S")
+        print(f"[SMCL] [{time_str}] {message}")
     def alert(self, message, title="SMCL"):
         return self.window.create_confirmation_dialog(title, message)
     def cmcl(self, cmd):
+        self.log(f"CMCL: {cmd}")
         args = cmd.split(" ")
         return self._run([CMCL] + args)
     def close(self):
@@ -71,12 +75,18 @@ class Api:
     def isDebug(self):
         return DEBUG
     def get(self, url):
+        self.log(f"GET请求: {url}")
         return requests.get(url).text
+    def init_cmcl(self):
+        if not path.exists(path.join(SRC_DIR, "cmcl.json")):
+            self.log("未检测到cmcl.json, 正在初始化...")
+            self.cmcl("config downloadSource 1")
 
 class UI:
     def __init__(self) -> None:
         self.api = Api()
     def start(self):
+        self.api.log(f"SMCL正在启动，DEBUG：{self.isDebug()}")
         window = webview.create_window('SMCL', GUI_MAIN,
                                        width=SIZE[0], height=SIZE[1],
                                        js_api=self.api)

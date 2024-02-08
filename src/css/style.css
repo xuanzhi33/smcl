@@ -1,0 +1,43 @@
+body {
+    background-image: url("../image/background.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+.ctrl {
+    background-color: #ffffffaa;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 0.5rem;
+    transition: all 0.3s;
+}
+.ctrl.button {
+    border: none;
+    outline: none;
+}
+
+.ctrl.button:hover {
+    background-color: #ffffffcc;
+}
+.ctrl.button:focus {
+    border: none;
+}
+
+.start-btns {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    width: 15rem;
+    padding: 2rem;
+    
+}
+
+.title-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 15rem;
+    margin: 1rem;
+}

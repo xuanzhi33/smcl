@@ -1,17 +1,7 @@
 class SMCL {
-    constructor() {
-      this.api = new API();
-
-    }
-
-    async initApi() {
-      await this.api.init();
-      this.api.log('初始化完毕');
-    }
-
     async init() {
-      await this.initApi();
-      await this.setBackground();
+      this.api = pywebview.api;
+      await this.api.init_cmcl();
     }
     start() {
       $(window).on("pywebviewready", () => {
