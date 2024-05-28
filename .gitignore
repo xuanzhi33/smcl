@@ -3,4 +3,6 @@ build
 dist
 *.spec
 test
-smcl.json
+test.py
+.minecraft
+src/cmcl.json

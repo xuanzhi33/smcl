@@ -16,14 +16,140 @@
 </head>
 
 <body>
-  <div class="start-btns">
-      <button class="ctrl button btn-block" id="btn">
-        <i class="fa fa-play-circle"></i> 启动游戏<br>
-        <span class="cur-ver">正在检测...</span>
-      </button>
-  </div>
-  <script src="./js/jquery.min.js"></script>
-  <script src="./js/smcl.js"></script>
+  <div id="app"></div>
+  <template id="main">
+    <loading v-if="loading" :title="loadingTitle"></loading>
+
+    <transition>
+      <div class="start-btns" v-if="!detecting">
+        <button class="ctrl button btn-block" @click="launchGame">
+          <i class="fa fa-play-circle"></i> {{ $t('launchBtn') }}
+          <br>
+          <span class="text-muted">
+            {{ curVer }}
+          </span>
+        </button>
+      </div>
+    </transition>
+  </template>
+
+  <template id="loading">
+    <div class="container my-3">
+      <div class="ctrl">
+        <span class="title">
+          {{ $t(title) }}
+        </span>
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped progress-bar-animated"
+           :style="{ width: progress + '%' }"></div>
+        </div>
+        <div class="log">
+          {{ log }}
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="./vue.global.prod.js"></script>
+  <script src="./vue-i18n.global.prod.js"></script>
+  <script type="module">
+    const { createApp } = Vue;
+    const { createI18n } = VueI18n;
+    let api = null;
+
+    const i18n = createI18n({
+      locale: "zh",
+      messages: {
+        en: {
+          launchBtn: "Launch Game",
+          selectVer: "Select Version",
+          launching: "Launching",
+          // TODO: i18n en
+        },
+        zh: {
+          launchBtn: "启动游戏",
+          selectVer: "选择版本",
+          launching: "启动中",
+          // TODO: i18n zh
+        }
+      }
+    });
+
+
+    // TODO: Loading
+    const Loading = {
+      template: "#loading",
+      props: {
+        title: {
+          type: String
+        }
+      },
+      data() {
+        return {
+          progress: 0,
+          log: ""
+        };
+      },
+      methods: {
+        setProgress(progress) {
+          this.progress = progress;
+        },
+        showProgressInfo(text) {
+        }
+      },
+      mounted() {
+        window.setProgress = this.setProgress;
+      }
+    };
+    const app = createApp({
+      components: {
+        Loading
+      },
+      data() {
+        return {
+          curVer: "",
+          detecting: true,
+          loading: false,
+          loadingTitle: ""
+        };
+      },
+      methods: {
+        // TODO: methods
+        async updateCurVer() {
+          this.detecting = true;
+          this.curVer = await api.config("selectedVersion") || this.$t("selectVer");
+          this.detecting = false;
+        },
+        
+        init_api() {
+          return new Promise(resolve => {
+            window.addEventListener("pywebviewready", () => {
+              api = pywebview.api;
+              resolve();
+            });
+          });
+        },
+        async launchGame() {
+          if (this.curVer === this.$t("selectVer")) {
+            return;
+          }
+          this.loading = true;
+          this.loadingTitle = "launching";
+          await api.cmcl_waiting(null);
+        }
+      },
+      async mounted() {
+        await this.init_api();
+        await api.init_cmcl();
+        this.$i18n.locale = await api.config("language");
+        await this.updateCurVer();
+      },
+      template: "#main"
+    });
+
+    app.use(i18n);
+    app.mount("#app");
+  </script>
 </body>
 
 </html>

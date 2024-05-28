@@ -13,6 +13,10 @@ body {
     padding: 0.5rem;
     transition: all 0.3s;
 }
+.title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
 .ctrl.button {
     border: none;
     outline: none;
@@ -40,4 +44,15 @@ body {
     left: 0;
     width: 15rem;
     margin: 1rem;
+}
+
+.v-enter-active,
+.v-leave-active {
+    transition: all 0.3s;
+}
+
+.v-enter-from,
+.v-leave-to {
+    opacity: 0;
+    transform: translateY(30px);
 }
