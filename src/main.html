@@ -18,41 +18,88 @@
 <body>
   <div id="app"></div>
   <template id="main">
-    <loading v-if="loading" :title="loadingTitle"></loading>
+    <transition mode="out-in">
+      <loading v-if="ui === 'loading'" :title="loadingTitle" :handle-cmd-result="handleCmdResult"
+        :log-placeholder="logPlaceholder"></loading>
+      <warning v-else-if="ui === 'warning'" :title="warningTitle" @close="closeWarning">
+          {{ warningContent }}
+      </warning>
+    </transition>
 
     <transition>
-      <div class="start-btns" v-if="!detecting">
-        <button class="ctrl button btn-block" @click="launchGame">
-          <i class="fa fa-play-circle"></i> {{ $t('launchBtn') }}
+      <div class="start-btns" v-if="ui === 'main'">
+        <button class="ctrl button btn-block" @click="launchGame" :disabled="ui !== 'main' || running">
+          <span class="text-success" v-if="running">
+            <i class="fa fa-gamepad"></i>
+            {{ $t('running') }}
+          </span>
+          <span v-else>
+            <i class="fa fa-play-circle"></i>
+            {{ $t('launchBtn') }}
+          </span>
           <br>
           <span class="text-muted">
-            {{ curVer }}
+            {{ curVer || $t('selectVer') }}
           </span>
+          
         </button>
       </div>
     </transition>
   </template>
 
-  <template id="loading">
-    <div class="container my-3">
-      <div class="ctrl">
+  <template id="ui-container">
+    <div class="container my-5">
+      <div class="ctrl text-center">
         <span class="title">
-          {{ $t(title) }}
+          <slot name="title"></slot>
         </span>
-        <div class="progress">
-          <div class="progress-bar progress-bar-striped progress-bar-animated"
-           :style="{ width: progress + '%' }"></div>
-        </div>
-        <div class="log">
-          {{ log }}
+        <div class="mt-3">
+          <slot name="content"></slot>
         </div>
       </div>
     </div>
   </template>
 
+  <template id="loading">
+    <ui-container>
+      <template #title>
+        {{ title }}
+      </template>
+      <template #content>
+        <div class="mb-3">
+          <span class="spinner-border spinner-border-sm"></span>
+          {{ log }}
+        </div>
+        <div class="progress">
+          <div class="progress-bar bg-success" :style="{ width: progress + '%' }"></div>
+        </div>
+      </template>
+    </ui-container>
+  </template>
+
+  <template id="warning">
+    <ui-container>
+      <template #title>
+        <span class="text-danger">
+          <i class="fa fa-warning"></i>
+        </span>
+        {{ title }}
+      </template>
+      <template #content>
+        <slot></slot>
+        <button class="btn btn-success btn-block mt-3" @click="$emit('close')">
+          <i class="fa fa-check"></i> {{ $t('ok') }}
+        </button>
+      </template>
+    </ui-container>
+  </template>
+
+  <!-- TODO: Component templates -->
+
   <script src="./vue.global.prod.js"></script>
   <script src="./vue-i18n.global.prod.js"></script>
   <script type="module">
+    const VERSION = "1.0.0";
     const { createApp } = Vue;
     const { createI18n } = VueI18n;
     let api = null;
@@ -63,25 +110,66 @@
         en: {
           launchBtn: "Launch Game",
           selectVer: "Select Version",
-          launching: "Launching",
+          versionUnselected: "Version Unselected",
+          launching: "Launching...",
+          loggingIn: "Logging in as '{name}'",
+          notLogin: "Not logged in",
+          player: "Player",
+          launchFail: "Failed to launch game",
+          running: "Running",
+          ok: "OK"
+
           // TODO: i18n en
         },
         zh: {
           launchBtn: "启动游戏",
           selectVer: "选择版本",
-          launching: "启动中",
+          versionUnselected: "未选择游戏版本",
+          launching: "启动中...",
+          loggingIn: "正在以 “{name}” 的身份登录",
+          notLogin: "未登录",
+          player: "玩家",
+          launchFail: "游戏启动失败",
+          running: "运行中",
+          ok: "好的"
           // TODO: i18n zh
         }
       }
     });
 
+    const UiContainer = {
+      template: "#ui-container"
+    };
+
+    const Warning = {
+      components: {
+        UiContainer
+      },
+      emits: ["close"],
+      template: "#warning",
+      props: {
+        title: {
+          type: String
+        }
+      }
+    };
 
     // TODO: Loading
     const Loading = {
+      components: {
+        UiContainer
+      },
       template: "#loading",
       props: {
         title: {
           type: String
+        },
+        handleCmdResult: {
+          type: Function
+        },
+        logPlaceholder: {
+          type: String,
+          default: " "
         }
       },
       data() {
@@ -91,36 +179,42 @@
         };
       },
       methods: {
-        setProgress(progress) {
-          this.progress = progress;
-        },
-        showProgressInfo(text) {
+        cmdResult(result) {
+          this.handleCmdResult(result, this);
         }
       },
       mounted() {
-        window.setProgress = this.setProgress;
+        window.cmdResult = this.cmdResult;
+        this.log = this.logPlaceholder;
       }
     };
+
+    // TODO: Components
     const app = createApp({
       components: {
-        Loading
+        Loading,
+        Warning
       },
       data() {
+        // TODO: data
         return {
+          running: false,
           curVer: "",
-          detecting: true,
-          loading: false,
-          loadingTitle: ""
+          curPlayer: "",
+          ui: "",
+          loadingTitle: "",
+          lastUI: "",
+          logPlaceholder: "",
+          warningTitle: "",
+          warningContent: "",
+          handleCmdResult: null
         };
       },
       methods: {
         // TODO: methods
-        async updateCurVer() {
-          this.detecting = true;
-          this.curVer = await api.config("selectedVersion") || this.$t("selectVer");
-          this.detecting = false;
+        changeUI(ui) {
+          this.ui = ui;
         },
-        
         init_api() {
           return new Promise(resolve => {
             window.addEventListener("pywebviewready", () => {
@@ -129,20 +223,87 @@
             });
           });
         },
+        startLoading(title, logPlaceholder, handleCmdResult) {
+          this.lastUI = this.ui;
+          this.ui = "loading";
+          this.loadingTitle = title;
+          this.handleCmdResult = handleCmdResult;
+          this.logPlaceholder = logPlaceholder;
+        },
+        finishLoading() {
+          this.ui = this.lastUI;
+          this.handleCmdResult = null;
+        },
+        showWarning(title, content) {
+          this.lastUI = this.ui;
+          this.ui = "warning";
+          this.warningTitle = title;
+          this.warningContent = content;
+        },
+        closeWarning() {
+          this.ui = this.lastUI;
+        },
         async launchGame() {
+          // TODO: launch game
           if (this.curVer === this.$t("selectVer")) {
             return;
           }
-          this.loading = true;
-          this.loadingTitle = "launching";
-          await api.cmcl_waiting(null);
+          await this.startLoading(this.$t("launchBtn"),
+            this.$t("loggingIn", { name: this.curPlayer }),
+            (result, loading) => {
+              console.log(result);
+              if (result.includes("Sound engine started")) {
+                this.finishLoading();
+                loading.progress = 100;
+                this.running = true;
+              } else if (result.includes("启动游戏中...") || result.includes("Starting game...")) {
+                loading.log = this.$t("launching");
+                loading.progress = 30;
+              } else {
+                loading.progress += 5;
+              }
+            });
+
+          const res = await api.cmcl_waiting(null);
+          this.running = false;
+          if (res.includes("游戏崩溃可能的错误") || res.includes("Game crash possible error")){
+            this.finishLoading();
+            // 正则匹配错误信息
+            const reg = /^(游戏崩溃可能的错误：|Game crash possible error: ).*$/m;
+            const match = reg.exec(res);
+            this.showWarning(this.$t("launchFail"), match[0]);
+          }
+        },
+        async init() {
+          // TODO: init
+          const config = await api.get_all_settings();
+          this.$i18n.locale = config.language;
+          this.curVer = config.selectedVersion;
+          const players = config.accounts;
+          for (const player of players) {
+            if (player.selected) {
+              this.curPlayer = player.playerName;
+              break;
+            }
+          }
+          const playerName = this.curPlayer || this.$t("notLogin");
+          const curVer = this.curVer || this.$t("versionUnselected");
+          await api.set_title(`SMCL ${VERSION} - Minecraft: ${curVer} - ${this.$t('player')}: ${playerName} - by xuanzhi33`);
+        }
+      },
+      watch: {
+        // TODO: watch
+        running(val) {
+          if (val) {
+            api.minimize();
+          }
         }
       },
       async mounted() {
         await this.init_api();
         await api.init_cmcl();
-        this.$i18n.locale = await api.config("language");
-        await this.updateCurVer();
+        await this.init();
+        this.ui = "main";
       },
       template: "#main"
     });

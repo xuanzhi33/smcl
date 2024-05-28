@@ -40,28 +40,27 @@ class Api:
         self.settings = Settings()
     def _set_window(self, window: Window):
         self.window = window
-    def _run(self, args):
-        result = sp_run(args, capture_output=True, text=True)
-        return result.stdout
     def run_js(self, js):
         return self.window.evaluate_js(js)
-    def set_progress(self, progress):
-        self.run_js(f"window.setProgress({progress})")
-    def show_progress_info(self, info):
-        self.run_js(f"window.showProgressInfo(`{info}`)")
+    def cmd_result(self, result):
+        self.run_js(f"window.cmdResult(`{result}`)")
     def cmcl_waiting(self, cmd):
-        self.log(f"CMCL: {cmd}")
         args = [CMCL]
         if cmd is not None:
+            self.log(f"CMCL: {cmd}")
             args += cmd.split(" ")
-        
+        else:
+            self.log(f"CMCL: Launch Game")
+
         p = Popen(args, stdout=PIPE, stderr=PIPE, text=True)
-        prog = 0
+        last_lines = []
         for line in p.stdout:
-            print(line)
-            self.set_progress(prog)
-            self.show_progress_info(line)
-            prog += 1
+            self.cmd_result(line)
+            last_lines.append(line)
+            if len(last_lines) > 10:
+                last_lines.pop(0)
+
+        return "".join(last_lines)
 
     def set_title(self, title):
         self.log(f"New title: {title}")
@@ -76,12 +75,18 @@ class Api:
     def cmcl(self, cmd):
         self.log(f"CMCL: {cmd}")
         args = cmd.split(" ")
-        return self._run([CMCL] + args)
+        p = sp_run([CMCL] + args, capture_output=True, text=True)
+        result = p.stdout
+        self.log(f"Result: {result}")
+        return result
     def config(self, key, value = None):
         if value == None:
             return self.settings.get(key)
         else:
             return self.settings.set({key: value})
+    def get_all_settings(self):
+        with open(CMCL_CONFIG, "r", encoding="utf-8") as f:
+            return json.load(f)
     def close(self):
         self.window.destroy()
     def minimize(self):
