@@ -21,11 +21,47 @@
     <transition mode="out-in">
       <loading v-if="ui === 'loading'" :title="loadingTitle" :handle-cmd-result="handleCmdResult"
         :log-placeholder="logPlaceholder"></loading>
-      <warning v-else-if="ui === 'warning'" :title="warningTitle" @close="closeWarning">
-          {{ warningContent }}
+      <warning v-else-if="ui === 'warning'" :title="warningTitle" @close="goBack">
+        {{ warningContent }}
       </warning>
+      <settings v-else-if="ui === 'settings'" :afl="actionAfterLaunch" :ds="downloadSource"
+        @update="updateSettings" @close="goBack"></settings>
+      <div v-else-if="ui === 'main'">
+        <button class="ctrl button account-menu">
+          <div style="font-size: 1.2rem; font-weight: bold;">
+            {{ curPlayer || $t('notLogin') }}
+            <i class="fa fa-edit"></i>
+          </div>
+          <div class="text-muted">
+            <div v-if="!curPlayer">
+              <i class="fa fa-user-plus"></i>
+              {{ $t('clickToAddAccount') }}
+            </div>
+            <div v-else-if="accountType === 2">
+              <i class="fa fa-windows"></i>
+              {{ $t('microsoftAccount') }}
+            </div>
+            <div v-else>
+              <i class="fa fa-user-circle-o"></i>
+              {{ $t('offlineAccount') }}
+            </div>
+          </div>
+        </button>
+      </div>
     </transition>
 
+    <transition>
+      <div class="main-menu" v-if="ui === 'main'">
+        <button class="ctrl button">
+          <i class="fa fa-bars"></i>
+          {{ $t('versionList') }}
+        </button> &nbsp;
+        <button class="ctrl button" @click="changeUI('settings')">
+          <i class="fa fa-cog"></i>
+          {{ $t('settings') }}
+        </button>
+      </div>
+    </transition>
     <transition>
       <div class="start-btns" v-if="ui === 'main'">
         <button class="ctrl button btn-block" @click="launchGame" :disabled="ui !== 'main' || running">
@@ -33,7 +69,7 @@
             <i class="fa fa-gamepad"></i>
             {{ $t('running') }}
           </span>
-          <span v-else>
+          <span v-else class="font-weight-bold">
             <i class="fa fa-play-circle"></i>
             {{ $t('launchBtn') }}
           </span>
@@ -41,7 +77,7 @@
           <span class="text-muted">
             {{ curVer || $t('selectVer') }}
           </span>
-          
+
         </button>
       </div>
     </transition>
@@ -94,6 +130,36 @@
     </ui-container>
   </template>
 
+  <template id="settings">
+    <ui-container>
+      <template #title>
+        <i class="fa fa-cog"></i>
+        {{ $t('settings') }}
+      </template>
+      <template #content>
+        <div class="font-weight-bold">{{ $t('language') }}</div>
+        <input type="radio" name="language" value="en" id="en" v-model="language"> <label for="en">English</label> &nbsp;
+        <input type="radio" name="language" value="zh" id="zh" v-model="language"> <label for="zh">中文</label>
+        
+        <div class="font-weight-bold">{{ $t('actionAfterLaunch') }}</div>
+        <input type="radio" name="actionAfterLaunch" value="minimize" id="minimize" v-model="actionAfterLaunch"> <label
+          for="minimize">{{ $t('minimize') }}</label> &nbsp;
+        <input type="radio" name="actionAfterLaunch" value="close" id="close" v-model="actionAfterLaunch"> <label
+          for="close">{{ $t('close') }}</label> &nbsp;
+        <input type="radio" name="actionAfterLaunch" value="none" id="none" v-model="actionAfterLaunch"> <label
+          for="none">{{ $t('none') }}</label>
+
+        <div class="font-weight-bold">{{ $t('downloadSource') }}</div>
+        <input type="radio" name="downloadSource" value="0" id="official" v-model="downloadSource"> <label
+          for="official">{{ $t('official') }}</label> &nbsp;
+        <input type="radio" name="downloadSource" value="1" id="bmcl" v-model="downloadSource"> <label for="bmcl">{{ $t('bmcl') }}</label>
+
+        <button class="btn btn-success btn-block mt-3" @click="$emit('close')">
+          <i class="fa fa-check"></i> {{ $t('finish') }}
+        </button>
+      </template>
+  </template>
+
   <!-- TODO: Component templates -->
 
   <script src="./vue.global.prod.js"></script>
@@ -117,7 +183,12 @@
           player: "Player",
           launchFail: "Failed to launch game",
           running: "Running",
-          ok: "OK"
+          ok: "OK",
+          versionList: "Version List",
+          settings: "Settings",
+          microsoftAccount: "Microsoft Account",
+          offlineAccount: "Offline Account",
+          clickToAddAccount: "Click to add account"
 
           // TODO: i18n en
         },
@@ -131,7 +202,12 @@
           player: "玩家",
           launchFail: "游戏启动失败",
           running: "运行中",
-          ok: "好的"
+          ok: "好的",
+          versionList: "版本列表",
+          settings: "设置",
+          microsoftAccount: "微软账户",
+          offlineAccount: "离线账户",
+          clickToAddAccount: "点击添加账户"
           // TODO: i18n zh
         }
       }
@@ -189,11 +265,72 @@
       }
     };
 
+    // TODO: Settings
+    const Settings = {
+      components: {
+        UiContainer
+      },
+      props: {
+        afl: {
+          type: String
+        },
+        ds: {
+          type: Number
+        }
+      },
+      data() {
+        return {
+          language: this.$i18n.locale,
+          actionAfterLaunch: this.afl,
+          downloadSource: this.ds
+        };
+      },
+      template: "#settings",
+      watch: {
+        language(val) {
+          this.$emit("update", "language", val);
+        },
+        actionAfterLaunch(val) {
+          this.$emit("update", "smclActionAfterLaunch", val);
+        },
+        downloadSource(val) {
+          this.$emit("update", "downloadSource", parseInt(val));
+        }
+      },
+      i18n: {
+        messages: {
+          en: {
+            language: "Language / 语言",
+            finish: "Finish",
+            actionAfterLaunch: "Action after launch",
+            minimize: "Minimize",
+            close: "Quit",
+            none: "None",
+            downloadSource: "Download source",
+            official: "Official (Recommended)",
+            bmcl: "BMCLAPI"
+          },
+          zh: {
+            language: "语言 / Language",
+            finish: "完成",
+            actionAfterLaunch: "启动后操作",
+            minimize: "最小化",
+            close: "退出",
+            none: "无",
+            downloadSource: "下载源",
+            official: "官方（推荐）",
+            bmcl: "BMCLAPI"
+          }
+        }
+      }
+    };
+
     // TODO: Components
     const app = createApp({
       components: {
         Loading,
-        Warning
+        Warning,
+        Settings
       },
       data() {
         // TODO: data
@@ -204,16 +341,24 @@
           ui: "",
           loadingTitle: "",
           lastUI: "",
+          accountType: 0,
           logPlaceholder: "",
           warningTitle: "",
           warningContent: "",
-          handleCmdResult: null
+          handleCmdResult: null,
+          actionAfterLaunch: null,
+          downloadSource: 0
         };
       },
       methods: {
         // TODO: methods
         changeUI(ui) {
+          this.lastUI = this.ui;
           this.ui = ui;
+        },
+        async updateSettings(key, value) {
+          await api.config(key, value);
+          await this.init();
         },
         init_api() {
           return new Promise(resolve => {
@@ -224,23 +369,21 @@
           });
         },
         startLoading(title, logPlaceholder, handleCmdResult) {
-          this.lastUI = this.ui;
-          this.ui = "loading";
+          this.changeUI("loading");
           this.loadingTitle = title;
           this.handleCmdResult = handleCmdResult;
           this.logPlaceholder = logPlaceholder;
         },
         finishLoading() {
-          this.ui = this.lastUI;
+          this.goBack();
           this.handleCmdResult = null;
         },
         showWarning(title, content) {
-          this.lastUI = this.ui;
-          this.ui = "warning";
+          this.changeUI("warning");
           this.warningTitle = title;
           this.warningContent = content;
         },
-        closeWarning() {
+        goBack() {
           this.ui = this.lastUI;
         },
         async launchGame() {
@@ -256,7 +399,7 @@
                 this.finishLoading();
                 loading.progress = 100;
                 this.running = true;
-              } else if (result.includes("启动游戏中...") || result.includes("Starting game...")) {
+              } else if (result.includes("Setting user:")) {
                 loading.log = this.$t("launching");
                 loading.progress = 30;
               } else {
@@ -266,7 +409,7 @@
 
           const res = await api.cmcl_waiting(null);
           this.running = false;
-          if (res.includes("游戏崩溃可能的错误") || res.includes("Game crash possible error")){
+          if (res.includes("游戏崩溃可能的错误") || res.includes("Game crash possible error")) {
             this.finishLoading();
             // 正则匹配错误信息
             const reg = /^(游戏崩溃可能的错误：|Game crash possible error: ).*$/m;
@@ -279,23 +422,32 @@
           const config = await api.get_all_settings();
           this.$i18n.locale = config.language;
           this.curVer = config.selectedVersion;
-          const players = config.accounts;
+          const players = config.accounts || [];
           for (const player of players) {
             if (player.selected) {
               this.curPlayer = player.playerName;
+              this.accountType = player.loginMethod;
               break;
             }
           }
           const playerName = this.curPlayer || this.$t("notLogin");
           const curVer = this.curVer || this.$t("versionUnselected");
+          this.actionAfterLaunch = config.smclActionAfterLaunch;
+          this.downloadSource = config.downloadSource;
           await api.set_title(`SMCL ${VERSION} - Minecraft: ${curVer} - ${this.$t('player')}: ${playerName} - by xuanzhi33`);
         }
       },
       watch: {
         // TODO: watch
-        running(val) {
+        async running(val) {
+          const sleep = new Promise(resolve => setTimeout(resolve, 1000));
           if (val) {
-            api.minimize();
+            await sleep;
+            if (this.actionAfterLaunch === "close") {
+              api.close();
+            } else if (this.actionAfterLaunch === "minimize") {
+              api.minimize();
+            }
           }
         }
       },

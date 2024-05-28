@@ -6,7 +6,7 @@ import json
 from webview import Window
 import requests
 from datetime import datetime
-from locale import getdefaultlocale
+from locale import getlocale
 PATH = path.dirname(path.abspath(__file__))
 CWD = getcwd()
 
@@ -91,10 +91,6 @@ class Api:
         self.window.destroy()
     def minimize(self):
         self.window.minimize()
-    def get_setting(self, key):
-        return self.settings.get(key)
-    def set_setting(self, key, value):
-        self.settings.set(key, value)
     def isDebug(self):
         return DEBUG
     def get(self, url):
@@ -107,7 +103,8 @@ class Api:
         self.log("Initializing cmcl.json")
         self.cmcl("config --clear")
         lang = "en"
-        if getdefaultlocale()[0] == "zh_CN":
+        sysLocale = getlocale()[0]
+        if "zh" in sysLocale or "Chinese" in sysLocale:
             lang = "zh"
         self.settings.set({
             "downloadSource": 0,
@@ -115,7 +112,8 @@ class Api:
             "printStartupInfo": True,
             "checkAccountBeforeStart": True,
             "gameDir": path.join(CWD, ".minecraft"),
-            "language": lang
+            "language": lang,
+            "smclActionAfterLaunch": "minimize"
         })
 
     def init_cmcl(self):
