@@ -452,6 +452,9 @@
       },
       watch: {
         async selected(val) {
+          if (val == -1) {
+            return;
+          }
           await this.account(["--select", String(val)]);
         },
         async cur(val) {
@@ -666,9 +669,15 @@
         },
         async launchGame() {
           // TODO: launch game
-          if (this.curVer === this.$t("selectVer")) {
+          if (!this.curVer) {
             return;
           }
+
+          if (!this.curPlayer) {
+            this.changeUI("playerList");
+            return;
+          }
+
           await this.startLoading(this.$t("launchBtn"),
             this.$t("loggingIn", { name: this.curPlayer }),
             (result, loading) => {
@@ -702,6 +711,10 @@
           this.curVer = config.selectedVersion;
           const players = config.accounts || [];
           this.players = players;
+
+          this.curPlayer = "";
+          this.curPlayerIndex = -1;
+          
           for (let i = 0; i < players.length; i++) {
             const player = players[i];
             if (player.selected) {
