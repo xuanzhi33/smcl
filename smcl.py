@@ -70,14 +70,14 @@ class Api:
             return
         time_str = datetime.now().strftime("%H:%M:%S")
         print(f"[SMCL] [{time_str}] {message}")
-    def alert(self, message, title="SMCL"):
+    def confirm_dialog(self, message, title="SMCL"):
+        self.log(f"ALERT: {title} - {message}")
         return self.window.create_confirmation_dialog(title, message)
-    def cmcl(self, cmd):
-        self.log(f"CMCL: {cmd}")
-        args = cmd.split(" ")
+    def cmcl(self, args):
+        self.log(f"CMCL: {args}")
         p = sp_run([CMCL] + args, capture_output=True, text=True)
         result = p.stdout
-        self.log(f"Result: {result}")
+        self.log(result)
         return result
     def config(self, key, value = None):
         if value == None:
@@ -101,7 +101,7 @@ class Api:
     
     def default_settings(self):
         self.log("Initializing cmcl.json")
-        self.cmcl("config --clear")
+        self.cmcl(["config","--clear"])
         lang = "en"
         sysLocale = getlocale()[0]
         if "zh" in sysLocale or "Chinese" in sysLocale:

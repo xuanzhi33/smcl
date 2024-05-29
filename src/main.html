@@ -19,15 +19,21 @@
   <div id="app"></div>
   <template id="main">
     <transition mode="out-in">
+      <!--TODO: UI-->
       <loading v-if="ui === 'loading'" :title="loadingTitle" :handle-cmd-result="handleCmdResult"
         :log-placeholder="logPlaceholder"></loading>
       <warning v-else-if="ui === 'warning'" :title="warningTitle" @close="goBack">
         {{ warningContent }}
       </warning>
       <settings v-else-if="ui === 'settings'" :afl="actionAfterLaunch" :ds="downloadSource"
-        @update="updateSettings" @close="goBack"></settings>
+        @update="updateSettings" @close="changeUI('main')"></settings>
+      <player-list v-else-if="ui === 'playerList'" :cur="curPlayerIndex" @close="changeUI('main')" :init="init"
+        :players="players" :aoa="addOfflineAccount"
+        :account="account"></player-list>
+      <text-input v-else-if="ui === 'input'" @finish="input.resolveFunc" @close="goBack" :title="input.title"
+        :desc="input.desc" :placeholder="input.placeholder"></text-input>
       <div v-else-if="ui === 'main'">
-        <button class="ctrl button account-menu">
+        <button class="ctrl button account-menu" @click="changeUI('playerList')">
           <div style="font-size: 1.2rem; font-weight: bold;">
             {{ curPlayer || $t('notLogin') }}
             <i class="fa fa-edit"></i>
@@ -160,6 +166,95 @@
       </template>
   </template>
 
+
+  <!-- TODO: TextInput template -->
+  <template id="text-input">
+    <ui-container>
+      <template #title>
+        <i class="fa fa-edit"></i>
+        {{ title }}
+      </template>
+      <template #content>
+        <div class="text-muted">
+          {{ desc }}
+        </div>
+        <input type="text" class="form-control mt-2" ref="inp" v-model="value" :placeholder="placeholder" @keyup.enter="finish">
+        <div class="btn-group mt-2 w-100">
+          <button class="btn btn-secondary" @click="$emit('close')">
+            <i class="fa fa-times"></i> {{ $t('cancel') }}
+          </button>
+          <button class="btn btn-success" @click="finish">
+            <i class="fa fa-check"></i> {{ $t('finish') }}
+          </button>
+        </div>
+        
+      </template>
+  </template>
+
+  <template id="playerList">
+    <ui-container>
+      <template #title>
+        <i class="fa fa-users"></i>
+        {{ $t('playerList') }}
+      </template>
+      <template #content>
+        <div class="mx-3">
+          <transition-group name="list">
+            <div v-for="(player, i) in players" class="clearfix mt-2" :key="player.playerName + player.loginMethod">
+              <div class="float-left">
+                <input type="radio" name="player" :value="i" v-model="selected" :id="'player-' + i"> <label
+                :for="'player-' + i">
+                {{ player.playerName }}
+              </label>
+              </div>
+              <div class="float-right">
+                <span v-if="player.loginMethod === 2" class="text-muted">
+                  <i class="fa fa-windows"></i>
+                  {{ $t('microsoftAccount') }}
+                </span>
+                <span v-else class="text-muted">
+                  <i class="fa fa-user-circle-o"></i>
+                  {{ $t('offlineAccount') }}
+                </span> &nbsp;
+                <button class="btn btn-sm btn-danger" @click="deletePlayer(i)">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </div>
+              
+            </div>
+          </transition-group>
+          <div v-if="players.length === 0" class="text-muted">
+            <i class="fa fa-minus-circle"></i>
+            {{ $t('noPlayers') }}
+          </div>
+          <transition mode="out-in">
+            <div v-if="adding.microsoft" class="mt-3 text-info">
+              <i class="fa fa-info-circle"></i>
+              {{ $t('microsoftLoginTips') }}
+            </div>
+            <div v-else-if="microsoftLoginFailed" class="mt-3 text-danger">
+              <i class="fa fa-times-circle"></i>
+              {{ $t('microsoftLoginFailed') }}
+            </div>
+          </transition>
+        </div>
+        <div class="btn-group mt-3 w-100">
+          <button class="btn btn-primary" @click="addMicrosoftAccount" :disabled="adding.microsoft">
+            <i class="fa fa-user-plus"></i>
+            {{ $t('addMicrosoftAccount') }}
+            <span class="spinner-border spinner-border-sm" v-if="adding.microsoft"></span>
+          </button>
+          <button class="btn btn-secondary" @click="addOfflineAccount">
+            <i class="fa fa-user-plus"></i>
+            {{ $t('addOfflineAccount') }}
+          </button>
+        </div>
+        <button class="btn btn-success btn-block mt-2" @click="$emit('close')">
+          <i class="fa fa-check"></i> {{ $t('finish') }}
+        </button>
+      </template>
+    </ui-container>
+  </template>
   <!-- TODO: Component templates -->
 
   <script src="./vue.global.prod.js"></script>
@@ -184,11 +279,18 @@
           launchFail: "Failed to launch game",
           running: "Running",
           ok: "OK",
+          finish: "Finish",
+          cancel: "Cancel",
           versionList: "Version List",
           settings: "Settings",
           microsoftAccount: "Microsoft Account",
           offlineAccount: "Offline Account",
-          clickToAddAccount: "Click to add account"
+          clickToAddAccount: "Click to add account",
+          addOfflineAccount: "Add Offline Account",
+          accountNameTips: "Please enter account name. Only letters and numbers are allowed. Length should be 3-16",
+          addOfflineAccountFailed: "Failed to add offline account",
+          nameInvalid: "The name you entered is invalid, please try again",
+          accountNamePlaceholder: "Enter account name",
 
           // TODO: i18n en
         },
@@ -203,11 +305,18 @@
           launchFail: "游戏启动失败",
           running: "运行中",
           ok: "好的",
+          finish: "完成",
+          cancel: "取消",
           versionList: "版本列表",
           settings: "设置",
           microsoftAccount: "微软账户",
           offlineAccount: "离线账户",
-          clickToAddAccount: "点击添加账户"
+          clickToAddAccount: "点击添加账户",
+          addOfflineAccount: "添加离线账户",
+          accountNameTips: "请输入账号名称，只能包含字母和数字，长度为 3-16 位",
+          accountNamePlaceholder: "输入账号名称",
+          addOfflineAccountFailed: "添加离线账户失败",
+          nameInvalid: "您输入的名称不符合要求，请重新添加"
           // TODO: i18n zh
         }
       }
@@ -325,12 +434,140 @@
       }
     };
 
+    // TODO: PlayerList
+    const PlayerList = {
+      components: {
+        UiContainer
+      },
+      emits: ["close"],
+      data() {
+        return {
+          selected: this.cur,
+          mode: "list",
+          adding: {
+            microsoft: false
+          },
+          microsoftLoginFailed: false
+        };
+      },
+      watch: {
+        async selected(val) {
+          await this.account(["--select", String(val)]);
+        },
+        async cur(val) {
+          this.selected = val;
+        }
+      },
+      methods: {
+        async deletePlayer(index) {
+          if (await api.confirm_dialog(this.$t("deleteConfirm"), this.$t("deletePlayer"))) {
+            await this.account(["--delete", String(index)]);
+          }
+        },
+        async addMicrosoftAccount() {
+          this.adding.microsoft = true;
+          this.microsoftLoginFailed = false;
+
+          const res = await this.account(["--login", "microsoft"]);
+          
+          this.adding.microsoft = false;
+
+          if (res.includes("Minecraft")){
+            this.microsoftLoginFailed = true;
+          } else {
+            this.selected = this.players.length - 1;
+          }
+        },
+        async addOfflineAccount() {
+          await this.aoa();
+        }
+      },
+      props: {
+        players: {
+          type: Array
+        },
+        cur: {
+          type: Number
+        },
+        account: {
+          type: Function
+        },
+        aoa: {
+          type: Function
+        },
+        init: {
+          type: Function
+        }
+      },
+      template: "#playerList",
+      i18n: {
+        messages: {
+          en: {
+            playerList: "Account List",
+            finish: "Finish",
+            deleteConfirm: "Are you sure to delete this account?",
+            deletePlayer: "Delete Account",
+            addMicrosoftAccount: "Add Microsoft (Genuine) Account",
+            addOfflineAccount: "Add Offline Account",
+            noPlayers: "No accounts added, click the button below to add",
+            microsoftLoginTips: "Please log in to your Microsoft account in the browser, and wait a moment after logging in.",
+            microsoftLoginFailed: "Microsoft account login failed, probably because this account has not purchased the genuine Minecraft. Please purchase it before logging in or use an offline account to log in."
+          },
+          zh: {
+            playerList: "账号列表",
+            finish: "完成",
+            deleteConfirm: "确定要删除这个账号吗？",
+            deletePlayer: "删除账号",
+            addMicrosoftAccount: "添加微软（正版）账户",
+            addOfflineAccount: "添加离线账户",
+            noPlayers: "未添加账号，请点击下方按钮添加",
+            microsoftLoginTips: "请在浏览器内登录您的微软账户，登录完成后请稍等片刻。",
+            microsoftLoginFailed: "微软账户登录失败，大概率是因为此账号并未购买正版 Minecraft，请购买后再登录或者使用离线账户登录。"
+          }
+        }
+      }
+    };
+
+    const TextInput = {
+      components: {
+        UiContainer
+      },
+      template: "#text-input",
+      props: {
+        title: {
+          type: String
+        },
+        placeholder: {
+          type: String
+        },
+        desc: {
+          type: String
+        }
+      },
+      data() {
+        return {
+          value: ""
+        };
+      },
+      mounted() {
+        this.$refs.inp.focus();
+      },
+      methods: {
+        finish() {
+          this.$emit("finish", this.value);
+          this.$emit("close");
+        }
+      }
+    };
+
     // TODO: Components
     const app = createApp({
       components: {
         Loading,
         Warning,
-        Settings
+        Settings,
+        PlayerList,
+        TextInput
       },
       data() {
         // TODO: data
@@ -338,6 +575,8 @@
           running: false,
           curVer: "",
           curPlayer: "",
+          curPlayerIndex: -1,
+          players: [],
           ui: "",
           loadingTitle: "",
           lastUI: "",
@@ -347,7 +586,13 @@
           warningContent: "",
           handleCmdResult: null,
           actionAfterLaunch: null,
-          downloadSource: 0
+          downloadSource: 0,
+          input: {
+            title: "",
+            desc: "",
+            placeholder: "",
+            resolveFunc: null
+          }
         };
       },
       methods: {
@@ -356,9 +601,41 @@
           this.lastUI = this.ui;
           this.ui = ui;
         },
+        
+        async account(args) {
+          const cmds = ["account", ...args];
+          const res = await api.cmcl(cmds);
+          await this.init();
+          return res;
+        },
+        async addOfflineAccount() {
+          const name = await this.requestInput(
+            this.$t("addOfflineAccount"),
+            this.$t("accountNameTips"),
+            this.$t("accountNamePlaceholder"));
+
+          const reg = /^[a-zA-Z0-9]{3,16}$/;
+          if (!reg.test(name)) {
+            this.showWarning(this.$t("addOfflineAccountFailed"), this.$t("nameInvalid"));
+            return;
+          }
+
+          await this.account(["--login", "offline", "--name", name]);
+
+          this.curPlayerIndex = this.players.length - 1;
+        },
         async updateSettings(key, value) {
           await api.config(key, value);
           await this.init();
+        },
+        async requestInput(title, desc, placeholder) {
+          this.input.title = title;
+          this.input.desc = desc;
+          this.input.placeholder = placeholder;
+          this.changeUI("input");
+          return await new Promise(resolve => {
+            this.input.resolveFunc = resolve;
+          });
         },
         init_api() {
           return new Promise(resolve => {
@@ -385,6 +662,7 @@
         },
         goBack() {
           this.ui = this.lastUI;
+          this.lastUI = "main";
         },
         async launchGame() {
           // TODO: launch game
@@ -423,9 +701,12 @@
           this.$i18n.locale = config.language;
           this.curVer = config.selectedVersion;
           const players = config.accounts || [];
-          for (const player of players) {
+          this.players = players;
+          for (let i = 0; i < players.length; i++) {
+            const player = players[i];
             if (player.selected) {
               this.curPlayer = player.playerName;
+              this.curPlayerIndex = i;
               this.accountType = player.loginMethod;
               break;
             }

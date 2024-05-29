@@ -55,11 +55,23 @@ body {
 
 .v-enter-active,
 .v-leave-active {
-    transition: all 0.3s;
+    transition: all 0.2s;
 }
 
 .v-enter-from,
 .v-leave-to {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
+}
+
+.list-enter-active,
+.list-leave-active,
+.list-move {
+    transition: all 0.3s;
+}
+
+.list-enter-from,
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(50px);
 }
