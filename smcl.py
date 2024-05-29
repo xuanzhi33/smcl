@@ -1,12 +1,12 @@
 import webview
-from subprocess import run as sp_run, PIPE, Popen
+from subprocess import run as sp_run, PIPE, Popen, STARTUPINFO, STARTF_USESHOWWINDOW
 import sys
 from os import path, remove, getcwd
 import json
 from webview import Window
 import requests
 from datetime import datetime
-from locale import getlocale
+from locale import getdefaultlocale
 PATH = path.dirname(path.abspath(__file__))
 CWD = getcwd()
 
@@ -38,6 +38,9 @@ class Api:
     def __init__(self) -> None:
         self.window = None
         self.settings = Settings()
+        self.startupinfo = STARTUPINFO()
+        self.startupinfo.dwFlags |= STARTF_USESHOWWINDOW
+        
     def _set_window(self, window: Window):
         self.window = window
     def run_js(self, js):
@@ -52,7 +55,7 @@ class Api:
         else:
             self.log(f"CMCL: Launch Game")
 
-        p = Popen(args, stdout=PIPE, stderr=PIPE, text=True)
+        p = Popen(args, stdout=PIPE, stderr=PIPE, text=True, startupinfo=self.startupinfo)
         last_lines = []
         for line in p.stdout:
             self.cmd_result(line)
@@ -75,7 +78,7 @@ class Api:
         return self.window.create_confirmation_dialog(title, message)
     def cmcl(self, args):
         self.log(f"CMCL: {args}")
-        p = sp_run([CMCL] + args, capture_output=True, text=True)
+        p = sp_run([CMCL] + args, capture_output=True, text=True, startupinfo=self.startupinfo)
         result = p.stdout
         self.log(result)
         return result
@@ -103,7 +106,8 @@ class Api:
         self.log("Initializing cmcl.json")
         self.cmcl(["config","--clear"])
         lang = "en"
-        sysLocale = getlocale()[0]
+        sysLocale = getdefaultlocale()[0]
+        self.log(f"System locale: {sysLocale}")
         if "zh" in sysLocale or "Chinese" in sysLocale:
             lang = "zh"
         self.settings.set({
