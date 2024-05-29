@@ -6,3 +6,4 @@ test
 test.py
 .minecraft
 src/cmcl.json
+__pycache__
