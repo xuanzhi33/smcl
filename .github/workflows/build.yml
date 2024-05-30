@@ -27,3 +27,4 @@ jobs:
       with:
         files: |
           SMCL_Windows_${{ github.ref }}.zip
+        tag_name: test1.0
