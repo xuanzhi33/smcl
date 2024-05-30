@@ -18,17 +18,19 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-    - name: Build and publish
-      id: build
+    - name: Build
       run: |
         python build.py
+    - name: Get Version
+      run: |
+        python .github/get_version.py >> "$GITHUB_ENV"
     - name: Zip
       run: |
-        7z a SMCL_Windows_${{ github.ref }}.zip dist/smcl/*
+        7z a ${{ env.smcl_version }}.zip ./dist/smcl/*
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          SMCL_Windows_${{ github.ref }}.zip
-        # tag_name: ${{ steps.build.outputs.version }}
+          ${{ env.smcl_version }}.zip
+        tag_name: ${{ env.smcl_version }}
         generate_release_notes: true
