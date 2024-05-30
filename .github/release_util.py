@@ -31,7 +31,6 @@ release_notes = f"""
 - Zip Password / 解压密码: `smcl`
 - Please extract and run smcl.exe / 下载后请解压并运行 smcl.exe
 
-## Changelog / 更新日志
 """
 
 with open("release_notes.md", "w", encoding="utf-8") as f:

@@ -35,15 +35,15 @@ class Settings:
 
 class Api:
     def __init__(self) -> None:
-        self.window = None
+        self._window = None
         self.settings = Settings()
         self.startupinfo = STARTUPINFO()
         self.startupinfo.dwFlags |= STARTF_USESHOWWINDOW
         
     def _set_window(self, window: Window):
-        self.window = window
+        self._window = window
     def run_js(self, js):
-        return self.window.evaluate_js(js)
+        return self._window.evaluate_js(js)
     def cmd_result(self, result):
         self.run_js(f"window.cmdResult(`{result}`)")
     def cmcl_waiting(self, cmd):
@@ -66,7 +66,7 @@ class Api:
 
     def set_title(self, title):
         self.log(f"New title: {title}")
-        self.window.title = title
+        self._window.title = title
     def log(self, message):
         if not DEBUG:
             return
@@ -74,7 +74,7 @@ class Api:
         print(f"[SMCL] [{time_str}] {message}")
     def confirm_dialog(self, message, title="SMCL"):
         self.log(f"ALERT: {title} - {message}")
-        return self.window.create_confirmation_dialog(title, message)
+        return self._window.create_confirmation_dialog(title, message)
     def cmcl(self, args):
         self.log(f"CMCL: {args}")
         p = sp_run([CMCL] + args, capture_output=True, text=True, startupinfo=self.startupinfo)
@@ -90,9 +90,9 @@ class Api:
         with open(CMCL_CONFIG, "r", encoding="utf-8") as f:
             return json.load(f)
     def close(self):
-        self.window.destroy()
+        self._window.destroy()
     def minimize(self):
-        self.window.minimize()
+        self._window.minimize()
     def isDebug(self):
         return DEBUG
     def cmcl_config_exists(self):
