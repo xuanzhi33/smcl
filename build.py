@@ -7,7 +7,7 @@ if path.exists(CMCL_JSON):
 
 cmds = ["pyinstaller"]
 
-# cmds.append("--windowed")
+cmds.append("--windowed")
 
 cmds.append("--icon")
 cmds.append("src/image/logo.png")
