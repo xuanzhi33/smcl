@@ -4,7 +4,6 @@ import sys
 from os import path, remove, getcwd
 import json
 from webview import Window
-import requests
 from datetime import datetime
 from locale import getdefaultlocale
 PATH = path.dirname(path.abspath(__file__))
@@ -96,9 +95,6 @@ class Api:
         self.window.minimize()
     def isDebug(self):
         return DEBUG
-    def get(self, url):
-        self.log(f"GET: {url}")
-        return requests.get(url).text
     def cmcl_config_exists(self):
         return path.exists(CMCL_CONFIG)
     

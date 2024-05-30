@@ -21,16 +21,17 @@ jobs:
     - name: Build
       run: |
         python build.py
-    - name: Get Version
+    - name: Run release script
       run: |
-        python .github/get_version.py
+        python .github/release_util.py
     - name: Zip
       run: |
-        7z a SMCL_Windows_${{ env.smcl_version }}.zip ./dist/smcl/* -p"smcl"
+        7z a ${{ env.smcl_filename }} ./dist/smcl
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          SMCL_Windows_${{ env.smcl_version }}.zip
+          ${{ env.smcl_filename }}
         tag_name: ${{ env.smcl_version }}
         generate_release_notes: true
+        body_path: release_notes.md
