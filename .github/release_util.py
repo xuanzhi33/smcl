@@ -28,6 +28,7 @@ release_notes = f"""
 - Windows: [{envs['smcl_filename']}]({download_mirror})
 
 ## Notes / 说明
+- Zip Password / 解压密码: `smcl`
 - Please extract and run smcl.exe / 下载后请解压并运行 smcl.exe
 
 ## Changelog / 更新日志
