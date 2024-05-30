@@ -23,7 +23,7 @@ jobs:
         python build.py
     - name: Get Version
       run: |
-        python .github/get_version.py >> "$GITHUB_ENV"
+        python .github/get_version.py
     - name: Zip
       run: |
         7z a ${{ env.smcl_version }}.zip ./dist/smcl/*
