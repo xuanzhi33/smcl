@@ -19,6 +19,7 @@ jobs:
       run: |
         pip install -r requirements.txt
     - name: Build and publish
+      id: build
       run: |
         python build.py
     - name: Zip
@@ -29,4 +30,5 @@ jobs:
       with:
         files: |
           SMCL_Windows_${{ github.ref }}.zip
-        tag_name: test1.0
+        # tag_name: ${{ steps.build.outputs.version }}
+        generate_release_notes: true
