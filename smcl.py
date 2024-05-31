@@ -45,12 +45,13 @@ class Api:
     def run_js(self, js):
         return self._window.evaluate_js(js)
     def cmd_result(self, result):
-        self.run_js(f"window.cmdResult(`{result}`)")
+        resultJson = json.dumps(result)
+        self.run_js(f"window.cmdResult({resultJson});")
     def cmcl_waiting(self, cmd):
         args = [CMCL]
         if cmd is not None:
             self.log(f"CMCL: {cmd}")
-            args += cmd.split(" ")
+            args += cmd
         else:
             self.log(f"CMCL: Launch Game")
 
