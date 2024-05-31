@@ -13,6 +13,7 @@ Still under development / 仍在开发中，功能不完善
 - [ ] Game version management / 游戏版本管理
 - [ ] Mod management / 模组管理
 - [ ] Cross-platform / 跨平台
+- [ ] Java version management / Java 版本管理
 - [ ] Auto-update / 自动更新
 
 Based on [CMCL](https://github.com/MrShieh-X/console-minecraft-launcher)
