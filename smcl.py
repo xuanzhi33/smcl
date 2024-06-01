@@ -1,13 +1,14 @@
 import webview
 from subprocess import run as sp_run, PIPE, Popen, STARTUPINFO, STARTF_USESHOWWINDOW
 import sys
-from os import path, remove, getcwd
+from os import path
+import os
 import json
 from webview import Window
 from datetime import datetime
 from locale import getdefaultlocale
 PATH = path.dirname(path.abspath(__file__))
-CWD = getcwd()
+CWD = os.getcwd()
 
 SRC_DIR = path.join(PATH, "src")
 GUI_MAIN = path.join(SRC_DIR, "main.html")
@@ -64,6 +65,25 @@ class Api:
                 last_lines.pop(0)
 
         return "".join(last_lines)
+    def makedirs(self, path_list):
+        dir_path = path.join(*path_list)
+        self.log(f"Creating directory: {dir_path}")
+        os.makedirs(dir_path, exist_ok=True)
+
+    def open_file(self, path_list):
+        file_path = path.join(*path_list)
+        self.log(f"Opening file: {file_path}")
+        if not path.exists(file_path):
+            return False
+
+        if os.name == "nt":
+            os.startfile(file_path)
+        elif os.name == "darwin":
+            sp_run(["open", file_path])
+        else:
+            sp_run(["xdg-open", file_path])
+        
+        return True
 
     def set_title(self, title):
         self.log(f"New title: {title}")

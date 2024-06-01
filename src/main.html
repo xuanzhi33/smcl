@@ -32,8 +32,8 @@
         :players="players" :aoa="addOfflineAccount"
         :account="account"></player-list>
       <version-list v-else-if="ui === 'versionList'" :cur-ver="curVer"
-        @install="installVersion"
-        @close="changeUI('main')"
+        @install="installVersion" @install-func="installFunc"
+        @close="changeUI('main')" :game-dir="gameDir"
         :init="init"></version-list>
       <text-input v-else-if="ui === 'input'" @finish="input.resolveFunc" @close="goBack" :title="input.title"
         :desc="input.desc" :placeholder="input.placeholder"></text-input>
@@ -290,15 +290,39 @@
                         {{ ver }}
                     </div>
                     <div class="float-right">
-                      <button class="btn btn-sm btn-danger" @click="deleteVersion(ver)">
-                        <i class="fa fa-trash"></i>
-                      </button>
+                      <div class="btn-group btn-group-sm" v-if="false">
+                        <button class="btn btn-info" @click="$emit('installFunc', 'forge', ver)">
+                          <i class="fa fa-cloud-download"></i>
+                          Forge
+                        </button>
+                        <button class="btn btn-info" @click="$emit('installFunc', 'fabric', ver)">
+                          <i class="fa fa-cloud-download"></i>
+                          Fabric
+                        </button>
+                        <button class="btn btn-info" @click="$emit('installFunc', 'optifine', ver)">
+                          <i class="fa fa-cloud-download"></i>
+                          OptiFine
+                        </button>
+                        <button class="btn btn-danger" @click="deleteVersion(ver)">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </transition-group>
               </div>
             </transition>
 
+          </div>
+          <div class="btn-group btn-group-sm mt-2">
+            <button class="btn btn-secondary" @click="openFolder('')">
+              <i class="fa fa-folder-open"></i>
+              {{ $t('gameFolder') }}
+            </button>
+            <button class="btn btn-secondary" @click="openFolder('saves')">
+              <i class="fa fa-folder-open"></i>
+              {{ $t('savesFolder') }}
+            </button>
           </div>
           <button class="btn btn-info btn-block mt-2" @click="mode = 'install'">
             <i class="fa fa-download"></i>
@@ -349,7 +373,7 @@
   <script src="./vue-i18n.global.prod.js"></script>
   <script type="module">
     // TODO: Version
-    const VERSION = "0.2.0";
+    const VERSION = "0.3.0";
     const { createApp } = Vue;
     const { createI18n } = VueI18n;
     let api = null;
@@ -660,13 +684,16 @@
 
     // TODO: VersionList
     const VersionList = {
-      emits: ["close", "install"],
+      emits: ["close", "install", "installFunc"],
       props: {
         curVer: {
           type: String
         },
         init: {
           type: Function
+        },
+        gameDir: {
+          type: String
         }
       },
       components: {
@@ -744,6 +771,13 @@
             }
             await this.getVersions();
           }
+        },
+        async openFolder(path) {
+          const exist = await api.open_file([this.gameDir, path]);
+          if (!exist) {
+            await api.makedirs([this.gameDir, path]);
+            await api.open_file([this.gameDir, path]);
+          }
         }
       },
       async mounted() {
@@ -763,7 +797,10 @@
             oldAlpha: "Old Alpha",
             oldBeta: "Old Beta",
             deleteConfirm: "Are you sure to delete this version?",
-            deleteVersion: "Delete Version"
+            deleteVersion: "Delete Version",
+            gameFolder: "Game",
+            savesFolder: "Saves",
+            fix: "Fix"
           },
           zh: {
             loading: "正在获取已安装的版本...",
@@ -777,7 +814,10 @@
             oldAlpha: "远古 Alpha 版",
             oldBeta: "远古 Beta 版",
             deleteConfirm: "确定要删除这个版本吗？",
-            deleteVersion: "删除版本"
+            deleteVersion: "删除版本",
+            gameFolder: "游戏",
+            savesFolder: "地图",
+            fix: "修复"
           }
         }
       }
@@ -811,6 +851,7 @@
           handleCmdResult: null,
           actionAfterLaunch: null,
           downloadSource: 0,
+          gameDir: "",
           input: {
             title: "",
             desc: "",
@@ -833,9 +874,8 @@
           return res;
         },
 
-        // TODO: installVersion
         async installVersion(ver) {
-          this.startLoading(this.$t("install"), this.$t("installing", { ver }), (result, loading) => {
+          await this.startLoading(this.$t("install"), this.$t("installing", { ver }), (result, loading) => {
             const msg = result.replace(/\u0008/g, "").replace(/\(\d+%\)/g, "");
             console.log(msg);
             const reg = /\[(\d+)\/(\d+)\]/;
@@ -849,8 +889,11 @@
             }
           });
           const res = await api.cmcl_waiting(["install", ver]);
-          this.finishLoading();
+          await this.finishLoading();
         },
+
+        // TODO: Install xxx
+
         
         async addOfflineAccount() {
           const name = await this.requestInput(
@@ -973,6 +1016,7 @@
           const curVer = this.curVer || this.$t("versionUnselected");
           this.actionAfterLaunch = config.smclActionAfterLaunch;
           this.downloadSource = config.downloadSource;
+          this.gameDir = config.gameDir;
           await api.set_title(`SMCL ${VERSION} - Minecraft: ${curVer} - ${this.$t('player')}: ${playerName} - by xuanzhi33`);
         }
       },
