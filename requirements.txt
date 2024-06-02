@@ -1,5 +1,5 @@
 pywebview; platform_system == "Windows"
 pywebview; platform_system == "Darwin"
-pywebview[qt]; platform_system == "Linux"
+pywebview[gtk]; platform_system == "Linux"
 pyinstaller
 pillow
