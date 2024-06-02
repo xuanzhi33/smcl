@@ -37,6 +37,8 @@
         :init="init"></version-list>
       <text-input v-else-if="ui === 'input'" @finish="input.resolveFunc" @close="goBack" :title="input.title"
         :desc="input.desc" :placeholder="input.placeholder"></text-input>
+      <install-java v-else-if="ui === 'installJava'" :show-warning="showWarning"
+        :ui-init="uiInit"></install-java>
       <div v-else-if="ui === 'main'">
         <button class="ctrl button account-menu" @click="changeUI('playerList')">
           <div style="font-size: 1.2rem; font-weight: bold;">
@@ -366,6 +368,54 @@
     </transition>
   </template>
 
+  <template id="install-java">
+    <ui-container>
+      <template #title>
+        <i class="fa fa-coffee"></i>
+        {{ $t('javaNotFound') }}
+      </template>
+      <template #content>
+        <div>
+          {{ $t('tips') }}
+        </div>
+        <div class="btn-group mt-2">
+          <a href="https://download.oracle.com/java/22/latest/jdk-22_windows-x64_bin.exe"
+            class="btn btn-info">
+            <i class="fa fa-download"></i>
+            Windows <br>
+          </a>
+          <a href="https://download.oracle.com/java/22/latest/jdk-22_macos-x64_bin.dmg"
+            class="btn btn-info">
+            <i class="fa fa-download"></i>
+            macOS <br>
+            (Intel)
+          </a>
+          <a href="https://download.oracle.com/java/22/latest/jdk-22_macos-aarch64_bin.dmg"
+            class="btn btn-info">
+            <i class="fa fa-download"></i>
+            macOS <br>
+            (Apple Silicon)
+          </a>
+          <a href="https://download.oracle.com/java/22/latest/jdk-22_linux-x64_bin.rpm"
+            class="btn btn-info">
+            <i class="fa fa-download"></i>
+            Linux <br>
+            (x64)
+          </a>
+          <a href="https://download.oracle.com/java/22/latest/jdk-22_linux-aarch64_bin.rpm"
+            class="btn btn-info">
+            <i class="fa fa-download"></i>
+            Linux <br>
+            (ARM64)
+          </a>
+        </div>
+        <button class="btn btn-success btn-block mt-2" @click="retry">
+          <i class="fa fa-check"></i> {{ $t('retry') }}
+        </button>
+      </template>
+    </ui-container>
+  </template>
+
 
   <!-- TODO: Component templates -->
 
@@ -373,7 +423,7 @@
   <script src="./vue-i18n.global.prod.js"></script>
   <script type="module">
     // TODO: Version
-    const VERSION = "0.3.0";
+    const VERSION = "0.4.0";
     const { createApp } = Vue;
     const { createI18n } = VueI18n;
     let api = null;
@@ -823,6 +873,45 @@
       }
     };
 
+    const InstallJava = {
+      components: {
+        UiContainer
+      },
+      props: {
+        uiInit: {
+          type: Function
+        },
+        showWarning: {
+          type: Function
+        }
+      },
+      template: "#install-java",
+      methods: {
+        async retry() {
+          const res = await this.uiInit();
+          if (!res) {
+            this.showWarning(this.$t("javaNotFound"), this.$t("stillFail"));
+          }
+        }
+      },
+      i18n: {
+        messages: {
+          en: {
+            javaNotFound: "Java not detected",
+            tips: "Minecraft requires Java Runtime. Please click the button below to download Java installer for your system.",
+            retry: "I have downloaded and installed Java",
+            stillFail: "Java still not detected, please try again or restart SMCL"
+          },
+          zh: {
+            javaNotFound: "未检测到 Java",
+            tips: "Minecraft 需要 Java 运行环境，请点击下方的按钮下载对应的 Java 安装包。",
+            retry: "我已经下载并安装了 Java",
+            stillFail: "仍然无法检测到 Java，请再次尝试，或重启 SMCL"
+          }
+        }
+      }
+    };
+
     // TODO: Components
     const app = createApp({
       components: {
@@ -831,7 +920,8 @@
         Settings,
         PlayerList,
         VersionList,
-        TextInput
+        TextInput,
+        InstallJava
       },
       data() {
         // TODO: data
@@ -1018,6 +1108,17 @@
           this.downloadSource = config.downloadSource;
           this.gameDir = config.gameDir;
           await api.set_title(`SMCL ${VERSION} - Minecraft: ${curVer} - ${this.$t('player')}: ${playerName} - by xuanzhi33`);
+        },
+        async uiInit() {
+          try {
+            await api.init_cmcl();
+            await this.init();
+            this.ui = "main";
+            return true;
+          } catch (e) {
+            this.ui = "installJava";
+            return false;
+          }
         }
       },
       watch: {
@@ -1036,9 +1137,7 @@
       },
       async mounted() {
         await this.init_api();
-        await api.init_cmcl();
-        await this.init();
-        this.ui = "main";
+        await this.uiInit();
       },
       template: "#main"
     });

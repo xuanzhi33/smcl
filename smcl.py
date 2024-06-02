@@ -13,7 +13,8 @@ CWD = os.getcwd()
 SRC_DIR = path.join(PATH, "src")
 GUI_MAIN = path.join(SRC_DIR, "main.html")
 CMCL_CONFIG = path.join(SRC_DIR, "cmcl.json")
-CMCL = path.join(SRC_DIR, "cmcl.exe")
+CMCL_PATH = path.join(SRC_DIR, "cmcl.jar")
+CMCL_CMD = ["java", "-jar", CMCL_PATH]
 
 SIZE = (800, 450)
 DEBUG = True
@@ -49,7 +50,7 @@ class Api:
         resultJson = json.dumps(result)
         self.run_js(f"window.cmdResult({resultJson});")
     def cmcl_waiting(self, cmd):
-        args = [CMCL]
+        args = CMCL_CMD
         if cmd is not None:
             self.log(f"CMCL: {cmd}")
             args += cmd
@@ -98,7 +99,7 @@ class Api:
         return self._window.create_confirmation_dialog(title, message)
     def cmcl(self, args):
         self.log(f"CMCL: {args}")
-        p = sp_run([CMCL] + args, capture_output=True, text=True, startupinfo=self.startupinfo)
+        p = sp_run(CMCL_CMD + args, capture_output=True, text=True, startupinfo=self.startupinfo)
         result = p.stdout
         self.log(result)
         return result
@@ -150,6 +151,8 @@ class UI:
         self.api = Api()
     def start(self):
         self.api.log(f"SMCL is starting, DEBUG: {self.isDebug()}")
+        webview.settings['ALLOW_DOWNLOADS'] = True
+
         window = webview.create_window('SMCL', GUI_MAIN,
                                        width=SIZE[0], height=SIZE[1],
                                        js_api=self.api)
