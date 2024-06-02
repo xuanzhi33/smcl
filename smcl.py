@@ -1,5 +1,6 @@
 import webview
-from subprocess import run as sp_run, PIPE, Popen, STARTUPINFO, STARTF_USESHOWWINDOW
+from subprocess import run as sp_run, PIPE, Popen
+import subprocess
 import sys
 from os import path
 import os
@@ -39,8 +40,11 @@ class Api:
     def __init__(self) -> None:
         self._window = None
         self.settings = Settings()
-        self.startupinfo = STARTUPINFO()
-        self.startupinfo.dwFlags |= STARTF_USESHOWWINDOW
+        if os.name == "nt":
+            self.startupinfo = subprocess.STARTUPINFO()
+            self.startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        else:
+            self.startupinfo = None
         
     def _set_window(self, window: Window):
         self._window = window
