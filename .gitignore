@@ -1,5 +1,4 @@
 src/.cmcl
-src/cmcl.exe
 build
 dist
 *.spec

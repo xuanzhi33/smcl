@@ -12,8 +12,7 @@ Still under development / 仍在开发中，功能不完善
 - [x] Multi-language support / 多语言支持
 - [x] Game version management / 游戏版本管理
 - [ ] Mod management / 模组管理
-- [ ] Cross-platform / 跨平台
-- [ ] Java version management / Java 版本管理
+- [x] Cross-platform / 跨平台
 - [ ] Auto-update / 自动更新
 
 Based on [CMCL](https://github.com/MrShieh-X/console-minecraft-launcher)

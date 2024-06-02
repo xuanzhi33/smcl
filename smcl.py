@@ -151,6 +151,8 @@ class UI:
         self.api = Api()
     def start(self):
         self.api.log(f"SMCL is starting, DEBUG: {self.isDebug()}")
+        webview.settings['ALLOW_DOWNLOADS'] = True
+
         window = webview.create_window('SMCL', GUI_MAIN,
                                        width=SIZE[0], height=SIZE[1],
                                        js_api=self.api)
