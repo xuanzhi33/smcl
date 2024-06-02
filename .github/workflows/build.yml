@@ -58,9 +58,9 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          smcl-${{ env.smcl_version }}-Windows.zip
-          smcl-${{ env.smcl_version }}-Linux.zip
-          smcl-${{ env.smcl_version }}-macOS.zip
+          SMCL-${{ env.smcl_version }}-Windows.zip
+          SMCL-${{ env.smcl_version }}-Linux.zip
+          SMCL-${{ env.smcl_version }}-macOS.zip
         tag_name: ${{ env.smcl_version }}
         generate_release_notes: true
         body_path: release_notes.md
