@@ -54,7 +54,7 @@ class Api:
         resultJson = json.dumps(result)
         self.run_js(f"window.cmdResult({resultJson});")
     def cmcl_waiting(self, cmd):
-        args = CMCL_CMD
+        args = CMCL_CMD.copy()
         if cmd is not None:
             self.log(f"CMCL: {cmd}")
             args += cmd
