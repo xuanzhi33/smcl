@@ -101,9 +101,12 @@ class Api:
     def confirm_dialog(self, message, title="SMCL"):
         self.log(f"ALERT: {title} - {message}")
         return self._window.create_confirmation_dialog(title, message)
-    def cmcl(self, args):
+    def cmcl(self, args, stdin = None):
         self.log(f"CMCL: {args}")
-        p = sp_run(CMCL_CMD + args, capture_output=True, text=True, startupinfo=self.startupinfo)
+        if stdin is not None:
+            self.log(f"stdin: {stdin}")
+        p = sp_run(CMCL_CMD + args, capture_output=True, input=stdin,
+                   text=True, startupinfo=self.startupinfo)
         result = p.stdout
         self.log(result)
         return result
