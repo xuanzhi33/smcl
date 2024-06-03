@@ -293,18 +293,18 @@
                     </div>
                     <div class="float-right">
                       <div class="btn-group btn-group-sm">
-                        <!-- <button class="btn btn-info" @click="$emit('installFunc', 'forge', ver)">
-                          <i class="fa fa-cloud-download"></i>
-                          Forge
-                        </button>
                         <button class="btn btn-info" @click="$emit('installFunc', 'fabric', ver)">
                           <i class="fa fa-cloud-download"></i>
                           Fabric
                         </button>
+                        <button class="btn btn-info" @click="$emit('installFunc', 'forge', ver)">
+                          <i class="fa fa-cloud-download"></i>
+                          Forge
+                        </button>
                         <button class="btn btn-info" @click="$emit('installFunc', 'optifine', ver)">
                           <i class="fa fa-cloud-download"></i>
                           OptiFine
-                        </button> -->
+                        </button>
                         <button class="btn btn-danger" @click="deleteVersion(ver)">
                           <i class="fa fa-trash"></i>
                         </button>
@@ -423,7 +423,7 @@
   <script src="./vue-i18n.global.prod.js"></script>
   <script type="module">
     // TODO: Version
-    const VERSION = "0.4.2";
+    const VERSION = "0.5.0";
     const { createApp } = Vue;
     const { createI18n } = VueI18n;
     let api = null;
@@ -457,7 +457,9 @@
           install: "Install Game",
           installing: "Installing {ver}...",
           downloadingResource: "Downloading resources...",
-          versionNotFound: "Version not found, please reinstall"
+          versionNotFound: "Version not found, please reinstall",
+          installFunc: "Install {type} for {ver}",
+          installFailed: "Installation Failed"
           // TODO: i18n en
         },
         zh: {
@@ -486,7 +488,9 @@
           install: "安装游戏",
           installing: "正在安装 {ver}...",
           downloadingResource: "正在下载资源文件...",
-          versionNotFound: "未找到此版本，请重新安装"
+          versionNotFound: "未找到此版本，请重新安装",
+          installFunc: "为 {ver} 安装 {type}",
+          installFailed: "安装失败"
           // TODO: i18n zh
         }
       }
@@ -846,7 +850,7 @@
             snapshot: "Snapshot",
             oldAlpha: "Old Alpha",
             oldBeta: "Old Beta",
-            deleteConfirm: "Are you sure to delete this version?",
+            deleteConfirm: "Are you sure to delete this version? This will not affect saves, mods, etc.",
             deleteVersion: "Delete Version",
             gameFolder: "Game",
             savesFolder: "Saves",
@@ -863,7 +867,7 @@
             snapshot: "快照版",
             oldAlpha: "远古 Alpha 版",
             oldBeta: "远古 Beta 版",
-            deleteConfirm: "确定要删除这个版本吗？",
+            deleteConfirm: "确定要删除这个版本吗？这不会影响地图、模组等数据。",
             deleteVersion: "删除版本",
             gameFolder: "游戏",
             savesFolder: "地图",
@@ -980,10 +984,43 @@
           });
           const res = await api.cmcl_waiting(["install", ver]);
           await this.finishLoading();
+          const resList = res.split("\n");
+          if (resList.length == 2) {
+            const warn = resList[0];
+            this.showWarning(this.$t("installFailed"), warn);
+          }
         },
 
-        // TODO: Install xxx
+        // TODO: InstallFunc
+        async installFunc(type, ver) {
 
+          await this.startLoading(this.$t("installFunc", { type, ver }),
+            this.$t("installing", { ver: type }), (result, loading) => {
+            
+            const msg = result.replace(/\u0008/g, "").replace(/\(\d+%\)/g, "");
+            console.log(msg);
+            
+            
+            loading.log = msg;
+            loading.progress += 5;
+            
+          });
+
+          const res = await api.cmcl(["version", ver, `--${type}`], "");
+          console.log(res);
+          const reg = /\(.+(\d+\.\d+\.\d+)\)/;
+          const match = reg.exec(res);
+          if (!match) {
+            this.finishLoading();
+            this.showWarning(this.$t("installFailed"), res);
+            return;
+          }
+          
+          const version = match[1];
+          await api.cmcl_waiting(["version", ver, `--${type}=${version}`]);
+
+          await this.finishLoading();
+        },
         
         async addOfflineAccount() {
           const name = await this.requestInput(
